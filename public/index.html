@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Dashboard</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body onload="load()">
+
+<!-- NAVBAR -->
+<div class="navbar">
+  <div class="logo">MyBlog CMS</div>
+  <div class="nav-right">
+    <button class="btn" onclick="logout()">Logout</button>
+  </div>
+</div>
+
+<!-- MAIN CONTENT -->
+<div class="container">
+
+  <!--HEADER (ADD HERE)-->
+  <div class="header">
+  <h1>Welcome to Your Blog Dashboard ✨</h1>
+  <p>Create, manage and publish your thoughts beautifully.</p>
+</div>
+
+  <!-- CREATE POST -->
+  <div class="post-form">
+    <h3>Create New Post</h3>
+    <input id="title" placeholder="Enter post title">
+    <textarea id="content" placeholder="Write something amazing..."></textarea>
+    <button class="btn" onclick="createPost()">Publish</button>
+  </div>
+
+  <!-- POSTS -->
+  <div id="posts" class="posts"></div>
+
+</div>
+
+<script>
+async function load() {
+  const res = await fetch("/api/dashboard");
+  const data = await res.json();
+
+  if (!data.loggedIn) {
+    location.href = "login.html";
+    return;
+  }
+
+  loadPosts();
+}
+
+async function createPost() {
+  await fetch("/api/post", {
+    method: "POST",
+    headers: {"Content-Type":"application/json"},
+    body: JSON.stringify({
+      title: title.value,
+      content: content.value
+    })
+  });
+
+  title.value = "";
+  content.value = "";
+  loadPosts();
+}
+
+async function loadPosts() {
+  const res = await fetch("/api/posts");
+  const data = await res.json();
+
+  if (data.length === 0) {
+    posts.innerHTML = `<div class="empty">No posts yet. Start writing ✨</div>`;
+    return;
+  }
+
+  posts.innerHTML = data.map(p => `
+    <div class="post">
+      <h3>${p.title}</h3>
+      <p>${p.content}</p>
+      <button class="btn delete" onclick="del('${p._id}')">Delete</button>
+    </div>
+  `).join("");
+}
+
+async function del(id) {
+  await fetch("/api/post/" + id, { method: "DELETE" });
+  loadPosts();
+}
+
+async function logout() {
+  await fetch("/api/logout");
+  location.href = "login.html";
+}
+</script>
+
+</body>
+</html>
